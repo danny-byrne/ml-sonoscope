@@ -49,6 +49,8 @@ export default function Home() {
     fetchData();
   }, []);
 
+  const transport = Tone.getTransport();
+
   const playAll = async () => {
     if (!points.length) return;
     if (isPlaying) return;
@@ -64,18 +66,22 @@ export default function Home() {
 
     const synth = synthRef.current;
 
+    // reset scheduled ref
+    scheduledEventsRef.current = [];
+
     // clear any previous scheduled events
     scheduledEventsRef.current.forEach((id) => Tone.Transport.clear(id));
     scheduledEventsRef.current = [];
 
-    Tone.Transport.stop();
-    Tone.Transport.cancel(); // fully clear timeline
+    transport.stop();
+    transport.cancel(); // fully clear timeline
 
     const step = 0.25; // seconds between notes
 
     points.forEach((p, index) => {
       const { embedding, cluster } = p;
 
+      // TODO: consts
       const minFreq = 200;
       const maxFreq = 1000;
       const freq = minFreq + embedding.y * (maxFreq - minFreq);
@@ -85,7 +91,7 @@ export default function Home() {
 
       const time = index * step;
 
-      const eventId = Tone.Transport.schedule((t) => {
+      const eventId = transport.schedule((t) => {
         synth.detune.value = detune * 100;
         synth.triggerAttackRelease(freq, "8n", t);
       }, time);
@@ -93,7 +99,7 @@ export default function Home() {
       scheduledEventsRef.current.push(eventId);
     });
 
-    Tone.Transport.start();
+    transport.start();
 
     const totalDuration = points.length * step;
     setTimeout(() => {
@@ -102,8 +108,8 @@ export default function Home() {
   };
 
   const stopAll = () => {
-    Tone.Transport.stop();
-    Tone.Transport.cancel(); // wipe timeline
+    transport.stop();
+    transport.cancel(); // wipe timeline
 
     scheduledEventsRef.current = [];
     setIsPlaying(false);
