@@ -12,3 +12,8 @@ export const getFrequencyFromEmbedding = (embedding: {
 }) => {
   return MIN_FREQ + embedding.y * (MAX_FREQ - MIN_FREQ);
 };
+
+// Map embedding.x in [0, 1] to pan in [-1, 1]
+export const getPanFromEmbedding = (embedding: { x: number; y: number }) => {
+  return embedding.x * 2 - 1;
+};
