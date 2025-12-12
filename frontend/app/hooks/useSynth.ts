@@ -7,6 +7,9 @@ import {
   DETUNE_MAP,
   getFrequencyFromEmbedding,
   getPanFromEmbedding,
+  getFrequencyForPoint,
+  getDetuneForPoint,
+  MappingPresetId,
 } from "../constants";
 
 export function useSynth() {
@@ -25,7 +28,7 @@ export function useSynth() {
     }
   };
 
-  const playPoint = async (point: Point) => {
+  const playPoint = async (point: Point, preset: MappingPresetId) => {
     await Tone.start();
 
     ensureSynthChain();
@@ -33,10 +36,10 @@ export function useSynth() {
     const synth = synthRef.current!;
     const panner = pannerRef.current!;
 
-    const { embedding, cluster } = point;
+    const { embedding } = point;
 
-    const freq = getFrequencyFromEmbedding(embedding);
-    const detune = DETUNE_MAP[cluster % DETUNE_MAP.length];
+    const freq = getFrequencyForPoint(point, preset);
+    const detune = getDetuneForPoint(point, preset);
     const pan = getPanFromEmbedding(embedding);
 
     panner.pan.value = pan;
@@ -44,22 +47,18 @@ export function useSynth() {
     synth.triggerAttackRelease(freq, "8n", Tone.now());
   };
 
-  const playAll = async (points: Point[]) => {
+  const playAll = async (points: Point[], preset: MappingPresetId) => {
     if (!points.length || isPlaying) return;
 
     setIsPlaying(true);
 
     await Tone.start();
-
     ensureSynthChain();
 
-    if (!synthRef.current) {
-      synthRef.current = new Tone.Synth().toDestination();
-    }
-    const synth = synthRef.current;
+    const synth = synthRef.current!;
     const panner = pannerRef.current!;
-
     const transport = Tone.getTransport();
+
     transport.stop();
     transport.cancel(0);
 
@@ -68,9 +67,10 @@ export function useSynth() {
     const step = 0.25;
 
     points.forEach((p, i) => {
-      const { embedding, cluster } = p;
-      const freq = getFrequencyFromEmbedding(embedding);
-      const detune = DETUNE_MAP[cluster % DETUNE_MAP.length];
+      const { embedding } = p;
+
+      const freq = getFrequencyForPoint(p, preset);
+      const detune = getDetuneForPoint(p, preset);
       const pan = getPanFromEmbedding(embedding);
 
       const time = i * step;

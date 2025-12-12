@@ -6,10 +6,14 @@ import ScatterPlot from "./components/Scatterplot";
 import PointList from "./components/PointList";
 import { useSynth } from "./hooks/useSynth";
 
+import MappingPresetSelector from "./components/MappingPresetSelector";
+import { MappingPresetId } from "./constants";
+
 export default function Home() {
   const [points, setPoints] = useState<Point[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [presetId, setPresetId] = useState<MappingPresetId>("pca");
 
   const { playPoint, playAll, stopAll, isPlaying } = useSynth();
 
@@ -42,7 +46,7 @@ export default function Home() {
         <>
           <div className="flex gap-4">
             <button
-              onClick={() => playAll(points)}
+              onClick={() => playAll(points, presetId)}
               disabled={isPlaying}
               className="px-4 py-2 border rounded"
             >
@@ -56,11 +60,16 @@ export default function Home() {
             >
               Stop
             </button>
+
+            <MappingPresetSelector presetId={presetId} onChange={setPresetId} />
           </div>
 
-          <ScatterPlot points={points} onPointClick={playPoint} />
+          <ScatterPlot
+            points={points}
+            onPointClick={(p) => playPoint(p, presetId)}
+          />
 
-          <PointList points={points} onPlay={playPoint} />
+          <PointList points={points} onPlay={(p) => playPoint(p, presetId)} />
         </>
       )}
     </main>
