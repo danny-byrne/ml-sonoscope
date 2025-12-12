@@ -19,6 +19,13 @@ type DataResponse = {
   points: Point[];
 };
 
+const minFreq = 200;
+const maxFreq = 1000;
+const detuneMap = [-12, 0, 7, 12];
+const getFreq = (embedding: any) => {
+  return minFreq + embedding.y * (maxFreq - minFreq);
+};
+
 export default function Home() {
   const [points, setPoints] = useState<Point[]>([]);
   const [loading, setLoading] = useState(false);
@@ -81,12 +88,8 @@ export default function Home() {
     points.forEach((p, index) => {
       const { embedding, cluster } = p;
 
-      // TODO: consts
-      const minFreq = 200;
-      const maxFreq = 1000;
-      const freq = minFreq + embedding.y * (maxFreq - minFreq);
+      const freq = getFreq(embedding);
 
-      const detuneMap = [-12, 0, 7, 12];
       const detune = detuneMap[cluster % detuneMap.length];
 
       const time = index * step;
@@ -115,6 +118,24 @@ export default function Home() {
     setIsPlaying(false);
   };
 
+  const playPoint = async (point: Point) => {
+    await Tone.start();
+
+    if (!synthRef.current) {
+      synthRef.current = new Tone.Synth().toDestination();
+    }
+    const synth = synthRef.current;
+
+    const { embedding, cluster } = point;
+
+    const freq = getFreq(embedding);
+
+    const detune = detuneMap[cluster % detuneMap.length];
+
+    synth.detune.value = detune * 100;
+    synth.triggerAttackRelease(freq, "8n", Tone.now());
+  };
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-6 p-6">
       <h1 className="text-2xl font-bold">ML Sonoscope</h1>
@@ -140,7 +161,35 @@ export default function Home() {
             Stop
           </button>
           <div className="max-h-64 overflow-auto border p-3 text-xs w-full max-w-xl">
-            <pre>{JSON.stringify(points.slice(0, 5), null, 2)}</pre>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left pr-2">ID</th>
+                  <th className="text-left pr-2">Cluster</th>
+                  <th className="text-left pr-2">x</th>
+                  <th className="text-left pr-2">y</th>
+                  <th className="text-left pr-2">Play</th>
+                </tr>
+              </thead>
+              <tbody>
+                {points.slice(0, 30).map((p) => (
+                  <tr key={p.id} className="border-b hover:bg-gray-100">
+                    <td className="pr-2">{p.id}</td>
+                    <td className="pr-2">{p.cluster}</td>
+                    <td className="pr-2">{p.embedding.x.toFixed(2)}</td>
+                    <td className="pr-2">{p.embedding.y.toFixed(2)}</td>
+                    <td className="pr-2">
+                      <button
+                        onClick={() => playPoint(p)}
+                        className="px-2 py-1 border rounded"
+                      >
+                        ▶
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </>
       )}
