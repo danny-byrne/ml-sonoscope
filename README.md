@@ -1,5 +1,7 @@
 # ML Sonoscope
 
+![ML Sonoscope Demo](demo.gif)
+
 **ML Sonoscope** is an interactive web application that explores how machine-learning representations can be translated into sound.  
 It combines a lightweight ML pipeline with real-time audio synthesis and visualization, allowing users to _listen_ to data as well as see it.
 
